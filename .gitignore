@@ -20,3 +20,6 @@ Thumbs.db
 # 참고: lib/*.jar 는 런타임 의존성이라 포함합니다.
 #       제외하려면 아래 주석을 풀고, setup 안내에 Maven Central 다운로드 링크를 추가하세요.
 # /lib/*.jar
+
+# DB 비밀번호 포함 — 로컬에서만 관리
+src/main/webapp/META-INF/context.xml
