@@ -21,7 +21,8 @@
                 <h4>내 계정</h4>
                 <a href="${ctx}/login.do">로그인</a><br>
                 <a href="${ctx}/join.do">회원가입</a><br>
-                <a href="${ctx}/mypage.do">마이페이지</a>
+                <a href="${ctx}/mypage.do">마이페이지</a><br>
+                <a href="${ctx}/metricAdmin.do">지표 관리(관리자)</a>
             </div>
             <div>
                 <h4>고객센터</h4>
@@ -38,6 +39,6 @@
     </div>
 </footer>
 
-<script src="${ctx}/js/app.js?v=20260608e"></script>
+<script src="${ctx}/js/app.js?v=20260621c"></script>
 </body>
 </html>

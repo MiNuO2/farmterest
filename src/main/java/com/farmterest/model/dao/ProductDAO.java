@@ -38,11 +38,34 @@ public class ProductDAO {
         p.setMoisture(m == null ? null : m.doubleValue());
         p.setTasteScore((Integer) rs.getObject("taste_score"));
         p.setCreatedAt(rs.getTimestamp("created_at"));
+        try {
+            BigDecimal ar = rs.getBigDecimal("avg_rating");
+            p.setAvgRating(ar == null ? null : ar.doubleValue());
+            p.setReviewCount(rs.getInt("review_count"));
+        } catch (Exception ignore) {
+            // 평점 컬럼이 없는 조회면 생략
+        }
+        try {
+            p.setMonthSold(rs.getInt("month_sold"));
+            p.setTotalSold(rs.getInt("total_sold"));
+        } catch (Exception ignore) {
+            // 판매집계 컬럼이 없는 조회면 생략
+        }
+        try {
+            p.setRevenue(rs.getLong("revenue"));
+        } catch (Exception ignore) {
+            // 매출 컬럼이 없는 조회면 생략
+        }
         return p;
     }
 
+    /** 평균 별점/후기수를 함께 가져오는 상관 서브쿼리(모든 상품 조회에 공통). */
+    private static final String RATING_COLS =
+            ", (SELECT ROUND(AVG(r.rating),1) FROM review r WHERE r.product_id = p.product_id) AS avg_rating"
+            + ", (SELECT COUNT(*) FROM review r WHERE r.product_id = p.product_id) AS review_count ";
+
     private static final String BASE_SELECT =
-            "SELECT p.*, m.name AS seller_name FROM product p "
+            "SELECT p.*, m.name AS seller_name" + RATING_COLS + "FROM product p "
             + "JOIN member m ON p.seller_id = m.member_id ";
 
     /** 동적 SQL 검색: 채워진 조건만 WHERE/ORDER BY 로 조립. */
@@ -142,7 +165,8 @@ public class ProductDAO {
 
     /** 판매량 기준 인기 상품 (없으면 최신순). */
     public List<ProductDTO> findPopular(int limit) throws Exception {
-        String sql = "SELECT p.*, m.name AS seller_name, COALESCE(SUM(oi.qty),0) AS sold "
+        String sql = "SELECT p.*, m.name AS seller_name, COALESCE(SUM(oi.qty),0) AS sold"
+                + RATING_COLS
                 + "FROM product p JOIN member m ON p.seller_id = m.member_id "
                 + "LEFT JOIN order_item oi ON oi.product_id = p.product_id "
                 + "GROUP BY p.product_id ORDER BY sold DESC, p.created_at DESC LIMIT ?";
@@ -150,6 +174,58 @@ public class ProductDAO {
         try (Connection con = DBManager.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapProduct(rs));
+                }
+            }
+        }
+        return list;
+    }
+
+    /**
+     * 한 품목(category)의 상품을 평점·이달판매·누적판매 집계와 함께 조회.
+     * '품목별 최고 상품' 선정과 품목 페이지 목록에 쓰인다.
+     * @param yyyymm 이달 판매 집계 기준월(예: "202606")
+     */
+    public List<ProductDTO> findByCategoryWithStats(String category, String yyyymm) throws Exception {
+        String sql = "SELECT p.*, m.name AS seller_name" + RATING_COLS
+                + ", COALESCE((SELECT SUM(oi.qty) FROM order_item oi JOIN orders o ON o.order_id = oi.order_id "
+                + "            WHERE oi.product_id = p.product_id AND DATE_FORMAT(o.ordered_at,'%Y%m') = ?),0) AS month_sold"
+                + ", COALESCE((SELECT SUM(oi2.qty) FROM order_item oi2 WHERE oi2.product_id = p.product_id),0) AS total_sold "
+                + "FROM product p JOIN member m ON p.seller_id = m.member_id "
+                + "WHERE p.category = ? ORDER BY p.created_at DESC";
+        List<ProductDTO> list = new ArrayList<>();
+        try (Connection con = DBManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, yyyymm);
+            ps.setString(2, category);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapProduct(rs));
+                }
+            }
+        }
+        return list;
+    }
+
+    /**
+     * 판매자의 상품을 판매·매출·평점 집계와 함께 조회(판매자 대시보드용).
+     * @param yyyymm 이달 판매 집계 기준월(예: "202606")
+     */
+    public List<ProductDTO> findBySellerWithStats(int sellerId, String yyyymm) throws Exception {
+        String sql = "SELECT p.*, m.name AS seller_name" + RATING_COLS
+                + ", COALESCE((SELECT SUM(oi.qty) FROM order_item oi WHERE oi.product_id = p.product_id),0) AS total_sold"
+                + ", COALESCE((SELECT SUM(oi.qty) FROM order_item oi JOIN orders o ON o.order_id = oi.order_id "
+                + "            WHERE oi.product_id = p.product_id AND DATE_FORMAT(o.ordered_at,'%Y%m') = ?),0) AS month_sold"
+                + ", COALESCE((SELECT SUM(oi.qty * oi.unit_price) FROM order_item oi WHERE oi.product_id = p.product_id),0) AS revenue "
+                + "FROM product p JOIN member m ON p.seller_id = m.member_id "
+                + "WHERE p.seller_id = ? ORDER BY total_sold DESC, p.created_at DESC";
+        List<ProductDTO> list = new ArrayList<>();
+        try (Connection con = DBManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, yyyymm);
+            ps.setInt(2, sellerId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     list.add(mapProduct(rs));

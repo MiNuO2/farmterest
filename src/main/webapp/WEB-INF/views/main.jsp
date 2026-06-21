@@ -1,12 +1,12 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<% request.setAttribute("pageTitle", "팜터레스트 — 강원의 진짜를, 숫자로 고른다"); %>
+<% request.setAttribute("pageTitle", "팜터레스트 — 숫자로 따져보고, 입맛대로 골라보세요"); %>
 <%@ include file="/WEB-INF/views/common/header.jsp" %>
 
 <!-- 히어로: 자연어 AI 검색이 주인공 -->
 <section class="hero center">
     <div class="container">
         <p class="eyebrow">강원도 농수산물 직거래</p>
-        <h1>강원의 진짜를,<br><span class="hl">숫자로</span> 고른다.</h1>
+        <h1>숫자로 따져보고,<br>입맛대로 <span class="hl">골라보세요</span>.</h1>
         <p class="lead">정백도·완전립·식미치까지 공개하는 산지 직거래.
             원하는 걸 말로 검색하면, 취향에 맞춰 골라드립니다.</p>
 
@@ -22,6 +22,28 @@
                 <a data-example="강릉 황태">강릉 황태</a>
                 <a data-example="식미치 좋은 햅쌀">식미치 좋은 햅쌀</a>
             </div>
+        </div>
+    </div>
+</section>
+
+<!-- 품목 바로가기 (오늘의 제철 강조 · 날짜 기반) -->
+<section class="cat-nav-sec">
+    <div class="container">
+        <div class="cat-nav-head">
+            <span class="cat-nav-title">품목별로 둘러보기</span>
+        </div>
+        <div class="cat-nav">
+            <a class="cat-chip" href="${ctx}/productList.do">
+                <span class="cc-ic"><ui:catIcon category="전체" /></span>
+                <span class="cc-name">전체</span>
+            </a>
+            <c:forEach var="e" items="${seasonalMap}">
+                <a class="cat-chip ${e.value ? 'seasonal' : ''}" href="${ctx}/category.do?cat=${e.key}">
+                    <c:if test="${e.value}"><span class="cc-badge">제철</span></c:if>
+                    <span class="cc-ic"><ui:catIcon category="${e.key}" /></span>
+                    <span class="cc-name">${e.key}</span>
+                </a>
+            </c:forEach>
         </div>
     </div>
 </section>

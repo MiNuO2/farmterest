@@ -23,6 +23,9 @@
         <div class="card-meta">
             <span>${product.sellerName}</span><span class="dot"></span><span>${product.region}</span>
         </div>
+        <c:if test="${product.reviewCount > 0}">
+            <ui:stars rating="${product.avgRating}" count="${product.reviewCount}" size="sm" />
+        </c:if>
         <c:if test="${product.hasQuality()}">
             <div class="quality-badges">
                 <c:if test="${not empty product.polishedRate}"><span class="badge">정백도 <b>${product.polishedRate}</b>%</span></c:if>

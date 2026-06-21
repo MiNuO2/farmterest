@@ -9,6 +9,7 @@ import com.farmterest.model.dto.MemberDTO;
 import com.farmterest.model.dto.ProductDTO;
 import com.farmterest.model.dto.Recommendation;
 import com.farmterest.service.RecommendationService;
+import com.farmterest.service.SeasonService;
 import com.farmterest.util.Params;
 import com.farmterest.util.SearchCriteria;
 
@@ -24,6 +25,9 @@ public class MainAction implements Action {
 
         List<ProductDTO> popular = productDAO.findPopular(8);
         request.setAttribute("popularProducts", popular);
+
+        // 품목 바로가기 버튼 + 오늘의 제철 강조(날짜 기반)
+        request.setAttribute("seasonalMap", SeasonService.seasonalFlags());
 
         MemberDTO member = (MemberDTO) request.getSession().getAttribute(Params.LOGIN);
         if (member != null) {

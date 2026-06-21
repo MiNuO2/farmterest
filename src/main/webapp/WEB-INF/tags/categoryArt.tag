@@ -14,7 +14,8 @@
 <div class="card-media cat-${category} ${big ? 'lg' : ''}">
     <c:choose>
         <c:when test="${not empty imageUrl}">
-            <img class="card-photo" src="${ctx}/${imageUrl}" alt="${empty name ? category : name}" loading="lazy" />
+            <img class="card-photo" src="${ctx}/${imageUrl}" alt="${empty name ? category : name}" loading="lazy"
+                 onerror="this.style.display='none'" />
         </c:when>
         <c:otherwise>
             <c:choose>

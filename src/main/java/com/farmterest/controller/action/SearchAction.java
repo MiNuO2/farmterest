@@ -64,7 +64,8 @@ public class SearchAction implements Action {
                 RecommendationService rec = new RecommendationService();
                 PreferenceProfile profile = rec.buildProfile(member.getMemberId());
                 if (!profile.isEmpty()) {
-                    request.setAttribute("recommendations", rec.rank(profile, products, products.size()));
+                    // 검색 결과를 누락 없이 '재정렬'하고 취향 근거를 붙인다(걸러내기 X).
+                    request.setAttribute("recommendations", rec.rankAll(profile, products));
                     request.setAttribute("profile", profile);
                 }
             }

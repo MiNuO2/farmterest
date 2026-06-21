@@ -2,6 +2,7 @@
 SET NAMES utf8mb4;
 
 DROP TABLE IF EXISTS ai_usage;
+DROP TABLE IF EXISTS review;
 DROP TABLE IF EXISTS order_item;
 DROP TABLE IF EXISTS orders;
 DROP TABLE IF EXISTS search_log;
@@ -61,6 +62,24 @@ CREATE TABLE order_item (
   CONSTRAINT fk_oi_order   FOREIGN KEY (order_id)   REFERENCES orders(order_id),
   CONSTRAINT fk_oi_product FOREIGN KEY (product_id) REFERENCES product(product_id),
   INDEX idx_oi_product (product_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 상품 후기/별점: 구매한 주문항목에 대해서만 1회 작성(member+order_item 유니크).
+-- 별점 평균은 상품 카드/상세의 평점 표시와 '품목별 최고 상품' 선정에 쓰인다.
+CREATE TABLE review (
+  review_id     INT AUTO_INCREMENT PRIMARY KEY,
+  product_id    INT NOT NULL,
+  member_id     INT NOT NULL,
+  order_item_id INT,                        -- 어떤 구매(주문항목)에 대한 후기인지
+  rating        TINYINT NOT NULL,           -- 1~5 별점
+  comment       VARCHAR(500),
+  created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_review_product FOREIGN KEY (product_id) REFERENCES product(product_id),
+  CONSTRAINT fk_review_member  FOREIGN KEY (member_id)  REFERENCES member(member_id),
+  CONSTRAINT chk_review_rating CHECK (rating BETWEEN 1 AND 5),
+  UNIQUE KEY uq_review_member_item (member_id, order_item_id),
+  INDEX idx_review_product (product_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 검색 로그: 맞춤 추천/통계 데이터 소스

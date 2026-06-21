@@ -68,7 +68,8 @@
                 <c:when test="${not empty recentSearches}">
                     <div class="tag-list">
                         <c:forEach var="kw" items="${recentSearches}">
-                            <a class="chip" href="${ctx}/search.do?q=${kw}">${kw}</a>
+                            <c:url var="kwUrl" value="/search.do"><c:param name="q" value="${kw}"/></c:url>
+                            <a class="chip" href="${kwUrl}">${fn:escapeXml(kw)}</a>
                         </c:forEach>
                     </div>
                 </c:when>
@@ -126,8 +127,48 @@
                         <div class="oc-body">
                             <c:forEach var="item" items="${order.items}">
                                 <div class="oc-line">
-                                    <span>${item.productName} x${item.qty}</span>
+                                    <span><a href="${ctx}/productDetail.do?id=${item.productId}" class="oc-prod">${item.productName}</a> x${item.qty}</span>
                                     <span class="mono"><fmt:formatNumber value="${item.subtotal}" type="number"/> 원</span>
+                                </div>
+                                <c:set var="rv" value="${myReviews[item.orderItemId]}" />
+                                <div class="oc-review">
+                                    <c:choose>
+                                        <c:when test="${not empty rv}">
+                                            <div class="my-review">
+                                                <span class="mr-label">내 평가</span>
+                                                <ui:stars stars="${rv.rating}" size="sm" />
+                                                <c:if test="${not empty rv.comment}"><span class="mr-cmt">${fn:escapeXml(rv.comment)}</span></c:if>
+                                                <details class="mr-edit">
+                                                    <summary>수정</summary>
+                                                    <form class="review-form" action="${ctx}/reviewSave.do" method="post">
+                                                        <input type="hidden" name="orderItemId" value="${item.orderItemId}">
+                                                        <div class="star-input">
+                                                            <c:forEach var="s" items="${[5,4,3,2,1]}">
+                                                                <input type="radio" id="r${item.orderItemId}-${s}" name="rating" value="${s}" <c:if test="${rv.rating eq s}">checked</c:if>>
+                                                                <label for="r${item.orderItemId}-${s}" title="${s}점">★</label>
+                                                            </c:forEach>
+                                                        </div>
+                                                        <input type="text" name="comment" maxlength="500" value="${fn:escapeXml(rv.comment)}" placeholder="후기를 남겨주세요 (선택)">
+                                                        <button type="submit" class="btn btn-forest btn-sm">수정</button>
+                                                    </form>
+                                                </details>
+                                            </div>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <form class="review-form" action="${ctx}/reviewSave.do" method="post">
+                                                <input type="hidden" name="orderItemId" value="${item.orderItemId}">
+                                                <span class="rf-q">이 상품 어떠셨나요?</span>
+                                                <div class="star-input">
+                                                    <c:forEach var="s" items="${[5,4,3,2,1]}">
+                                                        <input type="radio" id="r${item.orderItemId}-${s}" name="rating" value="${s}">
+                                                        <label for="r${item.orderItemId}-${s}" title="${s}점">★</label>
+                                                    </c:forEach>
+                                                </div>
+                                                <input type="text" name="comment" maxlength="500" placeholder="후기를 남겨주세요 (선택)">
+                                                <button type="submit" class="btn btn-forest btn-sm">별점 등록</button>
+                                            </form>
+                                        </c:otherwise>
+                                    </c:choose>
                                 </div>
                             </c:forEach>
                             <div class="oc-line" style="font-weight:700;">

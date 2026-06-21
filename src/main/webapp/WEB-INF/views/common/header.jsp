@@ -17,7 +17,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-    <link rel="stylesheet" href="${ctx}/css/style.css?v=20260608f">
+    <link rel="stylesheet" href="${ctx}/css/style.css?v=20260621g">
 </head>
 <body>
 
@@ -43,7 +43,6 @@
                     <span class="ns-ticker-label">실시간</span>
                     <div class="ns-ticker-roll">
                         <c:forEach var="kw" items="${trendingKeywords}"><span>${fn:escapeXml(kw)}</span></c:forEach>
-                        <span>${fn:escapeXml(trendingKeywords[0])}</span>
                     </div>
                 </div>
             </c:if>
@@ -53,17 +52,26 @@
         <button class="nav-toggle" aria-label="메뉴" onclick="document.getElementById('navActions').classList.toggle('mobile-open')">☰</button>
 
         <nav class="nav-actions" id="navActions">
-            <a href="${ctx}/productList.do" class="lbl">전체상품</a>
             <c:choose>
+                <%-- 판매자 전용 메뉴 (소비자와 완전히 다른 구성) --%>
+                <c:when test="${not empty sessionScope.loginMember and sessionScope.loginMember.seller}">
+                    <a href="${ctx}/mypage.do" class="lbl">판매 대시보드</a>
+                    <a href="${ctx}/sellerProducts.do" class="lbl">상품 관리</a>
+                    <a href="${ctx}/productList.do" class="lbl">마켓</a>
+                    <a href="${ctx}/sellerProductForm.do" class="btn btn-primary btn-sm">+ 상품 등록</a>
+                    <a href="${ctx}/mypage.do"><span class="badge badge-soft">판매자</span> <b>${sessionScope.loginMember.name}</b>님</a>
+                    <a href="${ctx}/logout.do" class="lbl">로그아웃</a>
+                </c:when>
+                <%-- 소비자 메뉴 --%>
                 <c:when test="${not empty sessionScope.loginMember}">
-                    <c:if test="${sessionScope.loginMember.seller}">
-                        <a href="${ctx}/sellerProducts.do">판매자센터</a>
-                    </c:if>
+                    <a href="${ctx}/productList.do" class="lbl">전체상품</a>
                     <a href="${ctx}/cart.do">장바구니<c:if test="${not empty sessionScope.cart}"><span class="cart-badge">${fn:length(sessionScope.cart)}</span></c:if></a>
                     <a href="${ctx}/mypage.do"><b>${sessionScope.loginMember.name}</b>님</a>
                     <a href="${ctx}/logout.do" class="lbl">로그아웃</a>
                 </c:when>
+                <%-- 비로그인 --%>
                 <c:otherwise>
+                    <a href="${ctx}/productList.do" class="lbl">전체상품</a>
                     <a href="${ctx}/cart.do">장바구니<c:if test="${not empty sessionScope.cart}"><span class="cart-badge">${fn:length(sessionScope.cart)}</span></c:if></a>
                     <a href="${ctx}/login.do">로그인</a>
                     <a href="${ctx}/join.do" class="btn btn-primary btn-sm">회원가입</a>

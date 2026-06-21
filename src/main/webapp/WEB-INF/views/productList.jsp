@@ -62,7 +62,7 @@
                     </div>
 
                     <div class="filter-group">
-                        <div class="filter-head">정백도</div>
+                        <div class="filter-head">정백도 <ui:helpTip metric="polished" /></div>
                         <div class="filter-body">
                             <select name="minPolishedRate">
                                 <option value="">전체</option>
@@ -126,4 +126,5 @@
     </div>
 </section>
 
+<%@ include file="/WEB-INF/views/common/qualityHelpModals.jsp" %>
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

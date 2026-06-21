@@ -24,6 +24,14 @@ public class ProductDTO {
     private Integer tasteScore;      // 식미치(점)
     private Timestamp createdAt;
 
+    // --- 파생(집계) 필드: DB 컬럼이 아니라 조회 시 계산해 채운다 ---
+    private Double avgRating;         // 평균 별점(리뷰 없으면 null)
+    private int reviewCount;          // 후기 수
+    private int monthSold;            // 이번 달 판매수량
+    private int totalSold;            // 누적 판매수량
+    private long revenue;             // 누적 매출(판매가 합계) — 판매자 대시보드용
+    private java.util.List<ProductMetric> metrics;  // 유연한 품질지표 값(상세 조회 시 로드)
+
     public ProductDTO() {
     }
 
@@ -31,6 +39,16 @@ public class ProductDTO {
     public boolean hasQuality() {
         return polishedRate != null || wholeGrainRate != null
                 || moisture != null || tasteScore != null;
+    }
+
+    /** 후기가 한 건이라도 있으면 true (별점 표시용). */
+    public boolean hasRating() {
+        return reviewCount > 0 && avgRating != null;
+    }
+
+    /** 별 채움 개수(0~5, 반올림) — 별점 위젯용. */
+    public int getRatingStars() {
+        return avgRating == null ? 0 : (int) Math.round(avgRating);
     }
 
     public int getProductId() { return productId; }
@@ -77,4 +95,28 @@ public class ProductDTO {
 
     public Timestamp getCreatedAt() { return createdAt; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+
+    public Double getAvgRating() { return avgRating; }
+    public void setAvgRating(Double avgRating) { this.avgRating = avgRating; }
+
+    public int getReviewCount() { return reviewCount; }
+    public void setReviewCount(int reviewCount) { this.reviewCount = reviewCount; }
+
+    public int getMonthSold() { return monthSold; }
+    public void setMonthSold(int monthSold) { this.monthSold = monthSold; }
+
+    public int getTotalSold() { return totalSold; }
+    public void setTotalSold(int totalSold) { this.totalSold = totalSold; }
+
+    public long getRevenue() { return revenue; }
+    public void setRevenue(long revenue) { this.revenue = revenue; }
+
+    public java.util.List<ProductMetric> getMetrics() { return metrics; }
+    public void setMetrics(java.util.List<ProductMetric> metrics) { this.metrics = metrics; }
+
+    /** 유연한 품질지표 값이 하나라도 있으면 true. */
+    public boolean isHasMetrics() { return metrics != null && !metrics.isEmpty(); }
+
+    /** 재고 부족(품절 임박) 여부 — 판매자 대시보드 알림용. */
+    public boolean isLowStock() { return stock <= 10; }
 }

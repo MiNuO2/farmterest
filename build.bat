@@ -1,6 +1,7 @@
 @echo off
 REM === Farmterest build (javac, no Maven) ===
 set TOMCAT=C:\apache-tomcat-10.1.55
+set JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot
 set SRC=src\main\java
 set WEBAPP=src\main\webapp
 set BUILD=build
@@ -12,7 +13,7 @@ mkdir %CLASSES%
 
 echo [2/4] Compile Java...
 dir /s /b %SRC%\*.java > sources.txt
-javac -encoding UTF-8 -cp "%TOMCAT%\lib\servlet-api.jar;lib\gson-2.11.0.jar" -d %CLASSES% @sources.txt
+"%JAVA_HOME%\bin\javac.exe" -encoding UTF-8 -cp "%TOMCAT%\lib\servlet-api.jar;lib\gson-2.11.0.jar" -d %CLASSES% @sources.txt
 del sources.txt
 if errorlevel 1 goto :err
 

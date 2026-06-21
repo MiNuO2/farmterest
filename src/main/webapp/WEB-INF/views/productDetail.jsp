@@ -66,11 +66,13 @@
             </div>
 
             <div class="detail-info">
-                <span class="badge badge-soft">${product.category}</span>
                 <h1>${product.name}</h1>
                 <p class="detail-meta">
                     <span>${product.sellerName}</span><span class="dot"></span><span>강원 ${product.region}</span>
                 </p>
+                <c:if test="${product.reviewCount > 0}">
+                    <p class="detail-rating"><ui:stars rating="${product.avgRating}" count="${product.reviewCount}" /></p>
+                </c:if>
                 <span class="price"><fmt:formatNumber value="${product.price}" type="number"/><small> 원</small></span>
 
                 <p class="detail-desc">${product.description}</p>
@@ -103,7 +105,7 @@
                                     </svg>
                                     <div class="donut-num"><b>${product.polishedRate}</b><i>%</i></div>
                                 </div>
-                                <div class="donut-cap">정백도</div>
+                                <div class="donut-cap">정백도 <ui:helpTip metric="polished" /></div>
                             </div>
                         </c:if>
                         <c:if test="${not empty product.wholeGrainRate}">
@@ -115,7 +117,7 @@
                                     </svg>
                                     <div class="donut-num"><b>${product.wholeGrainRate}</b><i>%</i></div>
                                 </div>
-                                <div class="donut-cap">완전립</div>
+                                <div class="donut-cap">완전립 <ui:helpTip metric="whole" /></div>
                             </div>
                         </c:if>
                         <c:if test="${not empty product.tasteScore}">
@@ -127,7 +129,7 @@
                                     </svg>
                                     <div class="donut-num"><b>${product.tasteScore}</b><i>점</i></div>
                                 </div>
-                                <div class="donut-cap">식미치</div>
+                                <div class="donut-cap">식미치 <ui:helpTip metric="taste" /></div>
                             </div>
                         </c:if>
                         <c:if test="${not empty product.moisture}">
@@ -139,17 +141,104 @@
                                     </svg>
                                     <div class="donut-num"><b><fmt:formatNumber value="${product.moisture}" minFractionDigits="1" maxFractionDigits="1"/></b><i>%</i></div>
                                 </div>
-                                <div class="donut-cap">수분</div>
+                                <div class="donut-cap">수분 <ui:helpTip metric="moisture" /></div>
                             </div>
                         </c:if>
                     </div>
                 </c:when>
                 <c:otherwise>
-                    <p class="muted">이 상품은 아직 품질 지표가 등록되지 않았어요.</p>
+                    <c:if test="${not product.hasMetrics}"><p class="muted">이 상품은 아직 품질 지표가 등록되지 않았어요.</p></c:if>
                 </c:otherwise>
             </c:choose>
         </div>
 
+    </div>
+</section>
+
+<!-- 유연한 품질 지표 (product_metric) -->
+<c:if test="${product.hasMetrics}">
+    <section class="section" style="padding-top:8px;">
+        <div class="container">
+            <h3 class="spec-title">품질 지표 <span>숫자로 비교하세요</span></h3>
+            <div class="metric-spec">
+                <c:forEach var="m" items="${product.metrics}">
+                    <div class="metric-item">
+                        <div class="mi-head">
+                            <span class="mi-label">${fn:escapeXml(m.def.label)}</span>
+                            <c:choose>
+                                <c:when test="${m.def.hasHelp}"><button type="button" class="help-btn" data-help="def-${m.def.defId}" aria-label="지표 설명 보기">?</button></c:when>
+                                <c:when test="${m.def.pending}"><span class="mi-pending">관리자 검토중</span></c:when>
+                            </c:choose>
+                            <span class="mi-value">${fn:escapeXml(m.value)}<c:if test="${not empty m.def.unit}"> ${fn:escapeXml(m.def.unit)}</c:if></span>
+                        </div>
+                        <c:if test="${not empty m.gaugePercent}">
+                            <div class="mi-bar ${m.def.goodHigh ? '' : 'rev'}"><span style="width:${m.gaugePercent}%"></span></div>
+                        </c:if>
+                    </div>
+                </c:forEach>
+            </div>
+            <p class="muted" style="font-size:.8rem; margin-top:10px;">'관리자 검토중'인 지표는 판매자가 새로 제안한 항목으로, 승인되면 상세 설명이 열립니다.</p>
+        </div>
+    </section>
+
+    <%-- 지표 도움말 모달 (공식 지표만) --%>
+    <c:forEach var="m" items="${product.metrics}">
+        <c:if test="${m.def.hasHelp}">
+            <div class="qh-modal" id="qh-def-${m.def.defId}" role="dialog" aria-modal="true">
+                <div class="qh-dialog">
+                    <div class="qh-head">
+                        <h3>${fn:escapeXml(m.def.label)}<c:if test="${not empty m.def.unit}"> <span style="font-size:.66em; color:var(--muted);">(${fn:escapeXml(m.def.unit)})</span></c:if></h3>
+                        <button type="button" class="qh-x" data-qh-close aria-label="닫기">&times;</button>
+                    </div>
+                    <div class="qh-body">
+                        <p class="qh-summary">${fn:escapeXml(m.def.helpSummary)}</p>
+                        <%-- 카탈로그(신뢰된 시드 HTML)만 원문 렌더. 관리자 승인 커스텀 설명은 escape(저장형 XSS 차단) --%>
+                        <c:choose>
+                            <c:when test="${m.def.status == 'CATALOG'}">${m.def.helpBody}</c:when>
+                            <c:otherwise><p style="white-space:pre-line;">${fn:escapeXml(m.def.helpBody)}</p></c:otherwise>
+                        </c:choose>
+                    </div>
+                    <div class="qh-foot"><button type="button" class="btn btn-forest btn-sm" data-qh-close>닫기</button></div>
+                </div>
+            </div>
+        </c:if>
+    </c:forEach>
+</c:if>
+
+<!-- 상품 후기 -->
+<section class="section" style="padding-top:8px;">
+    <div class="container">
+        <div class="section-head">
+            <div>
+                <p class="eyebrow">Reviews</p>
+                <h2>상품 후기 <c:if test="${product.reviewCount > 0}"><span class="count-inline">${product.reviewCount}개</span></c:if></h2>
+            </div>
+            <c:if test="${product.reviewCount > 0}">
+                <span class="rv-avg-head"><ui:stars rating="${product.avgRating}" count="${product.reviewCount}" /></span>
+            </c:if>
+        </div>
+
+        <c:choose>
+            <c:when test="${not empty reviews}">
+                <div class="review-list">
+                    <c:forEach var="rv" items="${reviews}">
+                        <div class="review-item">
+                            <div class="rv-top">
+                                <ui:stars stars="${rv.rating}" size="sm" />
+                                <span class="rv-who">${fn:escapeXml(rv.memberName)}</span>
+                                <span class="rv-date"><fmt:formatDate value="${rv.createdAt}" pattern="yyyy.MM.dd"/></span>
+                            </div>
+                            <c:if test="${not empty rv.comment}"><p class="rv-cmt">${fn:escapeXml(rv.comment)}</p></c:if>
+                        </div>
+                    </c:forEach>
+                </div>
+            </c:when>
+            <c:otherwise>
+                <div class="panel">
+                    <p class="muted">아직 후기가 없어요. 이 상품을 구매하면 마이페이지에서 별점을 남길 수 있어요.</p>
+                </div>
+            </c:otherwise>
+        </c:choose>
     </div>
 </section>
 
@@ -225,4 +314,5 @@
     })();
 </script>
 
+<%@ include file="/WEB-INF/views/common/qualityHelpModals.jsp" %>
 <%@ include file="/WEB-INF/views/common/footer.jsp" %>

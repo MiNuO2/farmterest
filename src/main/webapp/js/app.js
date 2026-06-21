@@ -6,9 +6,29 @@
 
     /* 1) 필터 아코디언 토글 (모바일/데스크톱 공통) */
     document.querySelectorAll(".filter-head").forEach(function (head) {
-      head.addEventListener("click", function () {
+      head.addEventListener("click", function (e) {
+        if (e.target.closest(".help-btn")) return;   // 도움말 버튼 클릭은 접힘 토글에서 제외
         head.closest(".filter-group").classList.toggle("collapsed");
       });
+    });
+
+    /* 1-b) 품질 지표 도움말 모달 (클릭하여 열기 / 배경·X·Esc 로 닫기) */
+    function qhClose() {
+      var open = document.querySelector(".qh-modal.open");
+      if (open) { open.classList.remove("open"); document.body.classList.remove("qh-lock"); }
+    }
+    document.addEventListener("click", function (e) {
+      var trig = e.target.closest("[data-help]");
+      if (trig) {
+        e.preventDefault();
+        var modal = document.getElementById("qh-" + trig.getAttribute("data-help"));
+        if (modal) { qhClose(); modal.classList.add("open"); document.body.classList.add("qh-lock"); }
+        return;
+      }
+      if (e.target.closest("[data-qh-close]") || e.target.classList.contains("qh-modal")) { qhClose(); }
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") qhClose();
     });
 
     /* 모바일에서는 필터 그룹 기본 접힘 */
@@ -50,28 +70,32 @@
       });
     });
 
-    /* 5) 실시간 인기 검색어 롤링 (아래 → 위로 밀어 올리며 등장) */
+    /* 5) 실시간 인기 검색어 — 끊김 없이 무한 반복되는 연속 세로 스크롤
+          (목록을 한 벌 복제해 이어 붙이고, 한 바퀴 끝나면 자동으로 처음으로 되돌아가 반복) */
     document.querySelectorAll(".ns-ticker-roll").forEach(function (roll) {
-      var items = roll.children;
-      if (items.length < 2) return;
-      var h = items[0].getBoundingClientRect().height;
-      var idx = 0;
-      var ease = "transform .5s cubic-bezier(.4,0,.2,1)";
-      roll.style.transition = ease;
-      setInterval(function () {
-        idx++;
-        roll.style.transform = "translateY(-" + (idx * h) + "px)";
-        if (idx >= items.length - 1) {
-          // 마지막(첫 항목 복제본)에 도달하면 끊김 없이 처음으로 리셋
-          setTimeout(function () {
-            roll.style.transition = "none";
-            roll.style.transform = "translateY(0)";
-            void roll.offsetHeight; // 리플로우 강제
-            roll.style.transition = ease;
-            idx = 0;
-          }, 520);
-        }
-      }, 2300);
+      var items = Array.prototype.slice.call(roll.children);
+      if (!items.length) return;
+
+      function start() {
+        var lineH = items[0].getBoundingClientRect().height;
+        if (!lineH) { setTimeout(start, 300); return; }   // 숨겨져 있으면 보일 때까지 대기
+
+        // roll(overflow:hidden 뷰포트) 안에 '트랙'을 만들어 spans를 옮기고, 한 벌 복제해 이어붙인다.
+        // 트랙만 위로 이동 → 뷰포트는 고정, 콘텐츠만 스크롤. 복제본 시작점이 0과 같아 끊김 없이 순환.
+        var track = document.createElement("div");
+        track.className = "ns-ticker-track";
+        items.forEach(function (el) { track.appendChild(el); });               // 원본 이동
+        items.forEach(function (el) { track.appendChild(el.cloneNode(true)); }); // 복제 추가
+        roll.appendChild(track);
+
+        var shift = lineH * items.length;                 // 한 목록 높이(px)
+        var SECONDS_PER_ITEM = 1.25;                       // 항목당 약 1.25초 → 8개면 한 바퀴 ≈ 10초
+        var duration = items.length * SECONDS_PER_ITEM;
+
+        track.style.setProperty("--ns-shift", "-" + shift + "px");
+        track.style.animation = "nsRoll " + duration + "s linear infinite";
+      }
+      start();
     });
 
     /* 입력 중이거나 포커스되면 티커를 숨겨 입력을 방해하지 않음 */

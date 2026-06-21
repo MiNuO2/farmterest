@@ -1,6 +1,6 @@
 @echo off
 REM === Farmterest DB setup (needs MySQL root) ===
-set MYSQL="C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe"
+set MYSQL="C:\mysql-8.4.9-winx64\bin\mysql.exe"
 set PW=1234
 
 echo [1/3] create db/user...
